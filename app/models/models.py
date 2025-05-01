@@ -9,9 +9,12 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     full_name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
-    phone_number = Column(String)
-    hashed_password = Column(String, nullable=False)
+    phone_number = Column(Integer,  unique=True, nullable=False)
+    hashed_password = Column(String, unique=True, nullable=False)
     role = Column(String, nullable=False)  # "listener" или "organization"
+    verified = Column(Boolean, nullable=False)  # для organization - подтверждение записи
+    # подтверждение будет происходить вручную после регистрации организации администратором сервиса
+
     records = relationship("Record", back_populates="user")
 
 
