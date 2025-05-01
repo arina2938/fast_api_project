@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 #from app.models import Base, engine
-from app.schemas.database import init_database
+from app.core.database import init_database
 from app.routers import user
 
 
