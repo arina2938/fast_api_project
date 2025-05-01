@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 #from app.models import Base, engine
-from app.schemas.database import Base, engine
+from app.schemas.database import init_database
 
 
-Base.metadata.create_all(bind=engine)
+init_database()
 app = FastAPI()
 
 
