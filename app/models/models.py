@@ -3,6 +3,8 @@ from sqlalchemy.orm import relationship
 #from sqlalchemy.ext.declarative import declarative_base
 from app.core.database import Base
 from enum import Enum
+from typing import List, Optional
+
 class User(Base):
     __tablename__ = "users"
 
@@ -10,7 +12,7 @@ class User(Base):
     full_name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     phone_number = Column(Integer,  unique=False, nullable=False)
-    user_password = Column(String, unique=True, nullable=False)
+    user_password = Column(String, unique=False, nullable=False)
     role = Column(String, nullable=False)  # "listener" или "organization"
     verified = Column(Boolean, nullable=False)  # для organization - подтверждение записи
     # подтверждение будет происходить вручную после регистрации организации администратором сервиса
@@ -43,14 +45,13 @@ class Concert(Base):
     concert_composers = relationship("ConcertComposer", back_populates="concert")
     concert_instruments = relationship("ConcertInstrument", back_populates="concert")
 
-
 class Composer(Base):
     __tablename__ = "composers"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    birth_year = Column(Integer)
-    death_year = Column(Integer)
+    name = Column(String,unique=True, nullable=False)
+    birth_year = Column(Integer, nullable=True)
+    death_year = Column(Integer, nullable=True)
 
     concert_composers = relationship("ConcertComposer", back_populates="composer")
 
@@ -59,7 +60,7 @@ class Instrument(Base):
     __tablename__ = "instruments"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
 
     concert_instruments = relationship("ConcertInstrument", back_populates="instrument")
 
@@ -77,22 +78,19 @@ class Instrument(Base):
 
 
 class ConcertComposer(Base):
-    __tablename__ = "concert_composers" # many-to-many table for relation of concerts and composers
-
-    id = Column(Integer, primary_key=True)
-    concert_id = Column(Integer, ForeignKey("concerts.id"))
-    composer_id = Column(Integer, ForeignKey("composers.id"))
-
+    __tablename__ = 'concert_composers'
+    concert_id = Column(Integer, ForeignKey('concerts.id'), primary_key=True)
+    composer_id = Column(Integer, ForeignKey('composers.id'), primary_key=True)
+    # ... остальные поля если есть
     concert = relationship("Concert", back_populates="concert_composers")
     composer = relationship("Composer", back_populates="concert_composers")
 
 
 class ConcertInstrument(Base):
-    __tablename__ = "concert_instruments" # many-to-many table for relation of concerts and instruments
+    __tablename__ = 'concert_instruments'
+    concert_id = Column(Integer, ForeignKey('concerts.id'), primary_key=True)
+    instrument_id = Column(Integer, ForeignKey('instruments.id'), primary_key=True)
 
-    id = Column(Integer, primary_key=True)
-    concert_id = Column(Integer, ForeignKey("concerts.id"))
-    instrument_id = Column(Integer, ForeignKey("instruments.id"))
 
     concert = relationship("Concert", back_populates="concert_instruments")
     instrument = relationship("Instrument", back_populates="concert_instruments")
