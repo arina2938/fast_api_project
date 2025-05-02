@@ -1,0 +1,54 @@
+"""Основной модуль FastAPI приложения.
+
+Создает и настраивает экземпляр FastAPI, подключает маршруты.
+"""
+
+from typing import Dict
+from fastapi import FastAPI
+from app.database import init_database
+from app.routers import (
+    auth_router,
+    concert_router,
+    composer_route,
+    instruments_router,
+)
+
+# Инициализация приложения
+app = FastAPI(
+    title="Concert API",
+    description="API для управления концертами и участниками",
+    version="1.0.0"
+)
+
+# Инициализация базы данных
+init_database()
+
+
+@app.get("/", tags=["Root"])
+async def root() -> Dict[str, str]:
+    """Корневой маршрут для проверки работы API.
+
+    Returns:
+        Dict[str, str]: Приветственное сообщение
+    """
+    return {"message": "Hello World"}
+
+
+@app.get("/hello/{name}", tags=["Greetings"])
+async def say_hello(name: str) -> Dict[str, str]:
+    """Приветствие пользователя по имени.
+
+    Args:
+        name (str): Имя пользователя
+
+    Returns:
+        Dict[str, str]: Персонализированное приветствие
+    """
+    return {"message": f"Hello {name}"}
+
+
+# Подключение маршрутов
+app.include_router(auth_router.router)
+app.include_router(concert_router.router)
+app.include_router(composer_route.router)
+app.include_router(instruments_router.router)
