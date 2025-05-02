@@ -9,9 +9,9 @@ class UserCreate(BaseModel):
     )
     full_name: str
     user_password: str = Field(..., min_length=6)
-    role: Literal["listener", "organization"] = Field(
-        description="Тип учетной записи: listener или organization",
-        examples=["listener", "organization"]
+    role: Literal["listener", "organization", "admin"] = Field(
+        description="Тип учетной записи: listener, organization, admin",
+        examples=["listener", "organization", "admin"]
     )
     #verified : bool = Field(
     #    description="Верификация организации администратором", )
