@@ -1,12 +1,11 @@
+"""Роутер для работы с композиторами."""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-
-from app.core.database import get_session
 from app.models.models import Composer
 from app.schemas import composer as schemas
 from ..auth.auth import get_current_user
-from app.core.database import get_session
+from app.database import get_session
 from app.models.models import  User
 
 router = APIRouter(prefix="/composers", tags=["Композиторы"])

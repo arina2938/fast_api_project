@@ -1,11 +1,10 @@
+"""Роутер для работы с инструментами."""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-
-from app.core.database import get_session
 from app.models.models import Instrument
 from app.schemas import instrument as schemas
-from app.core.database import get_session
+from app.database import get_session
 from app.models.models import  User
 from ..auth.auth import get_current_user
 

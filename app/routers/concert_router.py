@@ -1,13 +1,16 @@
+"""Роутер для управления концертами."""
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import select
 from typing import List, Optional
-from app.core.database import get_session
-from app.models.models import Concert, User, ConcertStatus, Composer, Instrument, ConcertComposer, ConcertInstrument
+from datetime import datetime, timezone
+from sqlalchemy.orm import joinedload, Session
+from sqlalchemy import select
+from app.database import get_session
+from app.models.models import (Concert, User, ConcertStatus,
+                               Composer, Instrument, ConcertComposer,
+                               ConcertInstrument, UserRole)
 from app.schemas import concert as schemas
 from ..auth.auth import get_current_user
-from datetime import datetime, timezone
-from sqlalchemy.orm import joinedload
+
 
 router = APIRouter(prefix="/concerts", tags=["Концерты"])
 
@@ -127,12 +130,12 @@ def update_concert(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Концерт не найден"
         )
-    if current_user.role != "admin":
-        if concert.organization_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Вы не являетесь организатором этого концерта"
-            )
+    #if current_user.role != "admin":
+    if concert.organization_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Вы не являетесь организатором этого концерта"
+        )
 
     data = concert_data.model_dump(exclude_unset=True)
 
