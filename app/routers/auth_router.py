@@ -59,10 +59,10 @@ def create_user(user: schema_user.UserCreate, session: Session = Depends(get_ses
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Пользователь с email {user.email} уже существует.")
 
-    if user.role not in ["listener", "organization"]:
+    if user.role not in ["listener", "organization", "admin"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Поле 'role' может принимать только значения 'listener' или 'organization'."
+            detail="Поле 'role' может принимать только значения 'listener','organization'."
         )
 
     # Hash the password before storing it
