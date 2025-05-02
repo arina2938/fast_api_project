@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from typing import List
+from typing import List, Optional
 from app.core.database import get_session
-from app.models.models import Concert, User, ConcertStatus
+from app.models.models import Concert, User, ConcertStatus, Composer, Instrument, ConcertComposer, ConcertInstrument
 from app.schemas import concert as schemas
 from ..auth.auth import get_current_user
 from datetime import datetime, timezone
+from sqlalchemy.orm import joinedload
 
 router = APIRouter(prefix="/concerts", tags=["Концерты"])
 
@@ -20,10 +21,10 @@ def create_concert(
         db: Session = Depends(get_session),
         current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != "organization" or current_user.role != "admin":
+    if current_user.role != "organization" and current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Только организации могут создавать концерты"
+            detail=f"Нет прав на создание концерь."
         )
 
     if concert_data.date < datetime.now(timezone.utc):
@@ -43,6 +44,26 @@ def create_concert(
     )
 
     db.add(new_concert)
+    db.flush()  # чтобы получить new_concert.id без коммита
+
+    if concert_data.composers:
+        for composer_id in concert_data.composers:
+            concert_composer = ConcertComposer(
+                concert_id=new_concert.id,
+                composer_id=composer_id
+            )
+            db.add(concert_composer)
+
+    if concert_data.instruments:
+        for instrument_id in concert_data.instruments:
+            concert_instrument = ConcertInstrument(
+                concert_id=new_concert.id,
+                instrument_id=instrument_id
+            )
+
+            db.add(concert_instrument)
+
+
     db.commit()
     db.refresh(new_concert)
 
@@ -212,3 +233,35 @@ def delete_concert(
     db.commit()
 
     return {"message": "Концерт успешно удален"}
+
+
+
+@router.get("/filter/", response_model=List[schemas.ConcertRead],
+            summary='Найти концерт по дате/инструменту/композитору')
+def filter_concerts(
+    date: Optional[datetime] = None,
+    composer_names: Optional[List[str]] = Query(None),
+    instrument_names: Optional[List[str]] = Query(None),
+    db: Session = Depends(get_session)
+):
+    query = db.query(Concert).options(
+        joinedload(Concert.concert_composers).joinedload(ConcertComposer.composer),
+        joinedload(Concert.concert_instruments).joinedload(ConcertInstrument.instrument)
+    ).filter(Concert.current_status == ConcertStatus.UPCOMING)
+
+    if date:
+        query = query.filter(Concert.date == date)
+
+    if composer_names:
+        query = query.join(Concert.concert_composers).join(ConcertComposer.composer).filter(
+            Composer.name.in_(composer_names)
+        )
+
+    if instrument_names:
+        query = query.join(Concert.concert_instruments).join(ConcertInstrument.instrument).filter(
+            Instrument.name.in_(instrument_names)
+        )
+
+    concerts = query.all()
+
+    return concerts
