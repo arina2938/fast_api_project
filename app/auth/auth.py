@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta, timezone
-from fastapi.security import OAuth2PasswordRequestForm
+from datetime import  timezone
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import jwt
@@ -7,12 +6,11 @@ from passlib.context import CryptContext
 from app.core.database import get_session
 from app.models.models import User
 from app.core.config import settings
-from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi import status, Depends, HTTPException
 from jwt.exceptions import InvalidTokenError
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
 from sqlalchemy import select
-from app.models.models import User as UserTable
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -46,8 +44,10 @@ def create_access_token(data: dict,
     return encoded_jwt
 
 
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
-                     db_session: Session = Depends(get_session)):
+def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db_session: Session = Depends(get_session)
+) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -61,11 +61,9 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
     except InvalidTokenError:
         raise credentials_exception
 
-    statement = (select(UserTable)
-                 .where(UserTable.email == username))
-    user = db_session.execute(statement).first()
+    statement = select(User).where(User.email == username)
+    user = db_session.scalars(statement).first()
 
     if user is None:
         raise credentials_exception
     return user
-
