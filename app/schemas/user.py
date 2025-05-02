@@ -8,7 +8,7 @@ class UserCreate(BaseModel):
         examples=["89001234567"]
     )
     full_name: str
-    hashed_password: str
+    user_password: str = Field(..., min_length=6)
     role: Literal["listener", "organization"] = Field(
         description="Тип учетной записи: listener или organization",
         examples=["listener", "organization"]
