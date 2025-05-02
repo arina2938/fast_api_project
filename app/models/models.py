@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Bool
 from sqlalchemy.orm import relationship
 #from sqlalchemy.ext.declarative import declarative_base
 from app.core.database import Base
-
+from enum import Enum
 class User(Base):
     __tablename__ = "users"
 
@@ -15,7 +15,12 @@ class User(Base):
     verified = Column(Boolean, nullable=False)  # для organization - подтверждение записи
     # подтверждение будет происходить вручную после регистрации организации администратором сервиса
 
-    records = relationship("Record", back_populates="user")
+    #records = relationship("Record", back_populates="user")
+
+class ConcertStatus(str, Enum):
+    UPCOMING = "upcoming"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 
 class Concert(Base):
@@ -27,13 +32,14 @@ class Concert(Base):
     description = Column(Text)
     price_type = Column(String)  # "free", "fixed", "hat"
     price_amount = Column(Integer, nullable=True)
-    max_people = Column(Integer)
-    current_people = Column(Integer, default=0)
+    #max_people = Column(Integer)
+    #current_people = Column(Integer, default=0)
     location = Column(String, nullable=False)
+    current_status: ConcertStatus = Column(String, default=ConcertStatus.UPCOMING)
     organization_id = Column(Integer, ForeignKey("users.id"))
 
     organization = relationship("User")
-    records = relationship("Record", back_populates="concert")
+    #records = relationship("Record", back_populates="concert")
     concert_composers = relationship("ConcertComposer", back_populates="concert")
     concert_instruments = relationship("ConcertInstrument", back_populates="concert")
 
@@ -53,24 +59,21 @@ class Instrument(Base):
     __tablename__ = "instruments"
 
     id = Column(Integer, primary_key=True)
-
-
     name = Column(String, nullable=False)
-    ents.txt
 
     concert_instruments = relationship("ConcertInstrument", back_populates="instrument")
 
 
-class Record(Base):
-    __tablename__ = "records"
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    concert_id = Column(Integer, ForeignKey("concerts.id"))
-    attended = Column(Boolean, default=False)
-
-    user = relationship("User", back_populates="records")
-    concert = relationship("Concert", back_populates="records")
+#class Record(Base):
+#    __tablename__ = "records"
+#
+#    id = Column(Integer, primary_key=True)
+#    user_id = Column(Integer, ForeignKey("users.id"))
+#    concert_id = Column(Integer, ForeignKey("concerts.id"))
+#    attended = Column(Boolean, default=False)
+#
+#    user = relationship("User", back_populates="records")
+#    concert = relationship("Concert", back_populates="records")
 
 
 class ConcertComposer(Base):
