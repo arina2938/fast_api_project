@@ -4,6 +4,11 @@ from sqlalchemy.orm import relationship
 from app.core.database import Base
 from enum import Enum
 from typing import List, Optional
+class UserRole(str, Enum):
+    """Роли пользователей."""
+
+    LISTENER = "listener"
+    ORG = "organization"
 
 class User(Base):
     __tablename__ = "users"
