@@ -21,10 +21,10 @@ def create_concert(
         db: Session = Depends(get_session),
         current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != "organization" and current_user.role != "admin":
+    if current_user.role != UserRole.ORG:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Нет прав на создание концерь."
+            detail="Нет прав на создание концерта."
         )
 
     if concert_data.date < datetime.now(timezone.utc):
@@ -176,9 +176,9 @@ def cancel_concert(
     if not concert:
         raise HTTPException(404, "Концерт не найден")
 
-    if current_user.role != "admin":
-        if concert.organization_id != current_user.id:
-            raise HTTPException(403, "Нет прав на отмену")
+    #if current_user.role != "admin":
+    if current_user.role != UserRole.ORG:
+        raise HTTPException(403, "Нет прав на отмену")
 
     # Проверка даты концерта
     if concert.date < datetime.now(timezone.utc):
@@ -217,12 +217,12 @@ def delete_concert(
             detail="Концерт не найден"
         )
 
-    if current_user.role != "admin":
-        if concert.organization_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Вы не являетесь организатором этого концерта"
-            )
+    #if current_user.role != "admin":
+    if concert.organization_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Вы не являетесь организатором этого концерта"
+        )
 
     if concert.current_status not in [ConcertStatus.CANCELLED, ConcertStatus.COMPLETED]:
         raise HTTPException(
