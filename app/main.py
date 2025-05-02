@@ -34,19 +34,6 @@ async def root() -> Dict[str, str]:
     return {"message": "Hello World"}
 
 
-@app.get("/hello/{name}", tags=["Greetings"])
-async def say_hello(name: str) -> Dict[str, str]:
-    """Приветствие пользователя по имени.
-
-    Args:
-        name (str): Имя пользователя
-
-    Returns:
-        Dict[str, str]: Персонализированное приветствие
-    """
-    return {"message": f"Hello {name}"}
-
-
 # Подключение маршрутов
 app.include_router(auth_router.router)
 app.include_router(concert_router.router)
