@@ -78,10 +78,7 @@ def user_login(
     response_model=schema_user.UserRead,
     summary="Регистрация пользователя"
 )
-def create_user(
-        user: schema_user.UserCreate,
-        session: Session = Depends(get_session)
-) -> User:
+def create_user(user: schema_user.UserCreate, session: Session = Depends(get_session)):
     """Регистрация нового пользователя в системе.
 
     Args:
@@ -93,13 +90,17 @@ def create_user(
 
     Raises:
         HTTPException: Если пользователь уже существует или неверная роль
+         if user.role not in UserRole.__members__.values():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Поле 'role' может принимать только значения: {[role.value for role in UserRole]}"
+        )
     """
     existing_user = session.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Пользователь с email {user.email} уже существует."
-        )
+            detail=f"Пользователь с email {user.email} уже существует.")
 
     if user.role not in UserRole.__members__.values():
         raise HTTPException(
@@ -107,13 +108,14 @@ def create_user(
             detail=f"Поле 'role' может принимать только значения: {[role.value for role in UserRole]}"
         )
 
+    # Hash the password before storing it
     hashed_password = auth.get_password_hash(user.user_password)
 
     new_user = User(
         email=str(user.email),
         phone_number=user.phone_number,
         full_name=user.full_name,
-        user_password=hashed_password,
+        user_password=hashed_password,  # Store the hashed version
         role=user.role,
         verified=False
     )
@@ -121,5 +123,6 @@ def create_user(
     session.add(new_user)
     session.commit()
     session.refresh(new_user)
+
 
     return new_user
