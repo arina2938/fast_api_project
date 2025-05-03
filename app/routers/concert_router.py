@@ -17,7 +17,7 @@ router = APIRouter(prefix="/concerts", tags=["Концерты"])
 
 @router.post("/",
              response_model=schemas.ConcertRead,
-             status_code=status.HTTP_200_OK,
+             status_code=status.HTTP_201_CREATED,
              summary='Создать концерт')
 def create_concert(
         concert_data: schemas.ConcertCreate,
@@ -29,7 +29,11 @@ def create_concert(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Нет прав на создание концерта."
         )
-
+    if not concert_data.location:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Требуется ввести место проведения"
+        )
     if concert_data.date < datetime.now(timezone.utc):
         raise HTTPException(
            status_code=status.HTTP_400_BAD_REQUEST,
@@ -184,7 +188,11 @@ def cancel_concert(
         raise HTTPException(403, "Нет прав на отмену")
 
     # Проверка даты концерта
-    if concert.date < datetime.now(timezone.utc):
+    concert_date = concert.date
+    if concert_date.tzinfo is None:
+        concert_date = concert_date.replace(tzinfo=timezone.utc)
+
+    if concert_date < datetime.now(timezone.utc):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Нельзя отменить уже прошедший концерт"
@@ -226,12 +234,17 @@ def delete_concert(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Вы не являетесь организатором этого концерта"
         )
+    db.refresh(concert)
 
-    if concert.current_status not in [ConcertStatus.CANCELLED, ConcertStatus.COMPLETED]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Можно удалить только отменённый или завершённый концерт"
-        )
+    #if concert.current_status not in [ConcertStatus.CANCELLED, ConcertStatus.COMPLETED]:
+    #    raise HTTPException(
+    #        status_code=status.HTTP_400_BAD_REQUEST,
+    #        detail="Можно удалить только отменённый или завершённый концерт"
+    #    )
+    db.query(ConcertComposer).filter_by(concert_id=concert_id).delete()
+
+    db.query(ConcertInstrument).filter_by(concert_id=concert_id).delete()
+
     db.delete(concert)
     db.commit()
 
