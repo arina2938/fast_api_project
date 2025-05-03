@@ -4,8 +4,10 @@
 """
 
 from typing import Dict
-from fastapi import FastAPI
-from app.database import init_database
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from app.models.models import Concert
+from app.database import get_session, init_database
 from app.routers import (
     auth_router,
     concert_router,
