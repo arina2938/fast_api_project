@@ -2,6 +2,7 @@
 
 # Стандартные библиотеки
 from enum import Enum
+from datetime import datetime, timedelta
 
 # Сторонние библиотеки
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
@@ -34,7 +35,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     full_name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
-    phone_number = Column(Integer, unique=False, nullable=False)
+    phone_number = Column(Integer, unique=False, nullable=True)
     user_password = Column(String, unique=False, nullable=False)
     role = Column(String, nullable=False)  # "listener" или "organization"
     verified = Column(Boolean, nullable=False)
@@ -67,9 +68,9 @@ class Concert(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
-    date = Column(DateTime, nullable=False)
+    date = Column(DateTime, nullable=False, default=datetime.now() + timedelta(weeks=1))
     description = Column(Text)
-    price_type = Column(String)  # "free", "fixed", "hat"
+    price_type = Column(String, nullable=True)
     price_amount = Column(Integer, nullable=True)
     location = Column(String, nullable=False)
     current_status = Column(String, default=ConcertStatus.UPCOMING)
