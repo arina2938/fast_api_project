@@ -168,3 +168,4 @@ cython_debug/
 *
 test.db
 .idea/fast_api_project.iml
+.env
