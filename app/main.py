@@ -4,10 +4,8 @@
 """
 
 from typing import Dict
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from app.models.models import Concert
-from app.database import get_session, init_database
+from fastapi import FastAPI
+from app.database import init_database
 from app.routers import (
     auth_router,
     concert_router,
@@ -15,14 +13,11 @@ from app.routers import (
     instruments_router,
 )
 
-# Инициализация приложения
 app = FastAPI(
     title="Concert API",
     description="API для управления концертами и участниками",
-    version="1.0.0"
 )
 
-# Инициализация базы данных
 init_database()
 
 
@@ -36,7 +31,7 @@ async def root() -> Dict[str, str]:
     return {"message": "Hello World"}
 
 
-# Подключение маршрутов
+
 app.include_router(auth_router.router)
 app.include_router(concert_router.router)
 app.include_router(composer_route.router)
