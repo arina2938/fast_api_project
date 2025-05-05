@@ -6,7 +6,8 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from app.models.models import ConcertStatus
-
+from app.schemas.instrument import InstrumentRead
+from app.schemas.composer import ComposerRead
 
 class ConcertBase(BaseModel):
     """Базовая схема для концерта."""
@@ -23,11 +24,9 @@ class ConcertBase(BaseModel):
     )
     location: str = Field(description="Место проведения концерта")
     composers: Optional[List[int]] = Field(
-        default_factory=list,
         description="Список id композиторов, чьи произведения прозвучат"
     )
     instruments: Optional[List[int]] = Field(
-        default_factory=list,
         description="Список id инструментов, задействованных в концерте"
     )
 
@@ -37,29 +36,13 @@ class ConcertCreate(ConcertBase):
     pass
 
 
-class ComposerRead(BaseModel):
-    """Схема для чтения данных о композиторе."""
-    id: int
-    name: str
-
-    class Config:
-        from_attributes = True
-
-
-class InstrumentRead(BaseModel):
-    """Схема для чтения данных об инструменте."""
-    id: int
-    name: str
-
-    class Config:
-        from_attributes = True
-
-
 class ConcertRead(ConcertBase):
     """Схема для чтения данных о концерте."""
     id: int
     organization_id: int
     current_status: ConcertStatus
+    composers: List[ComposerRead] = Field(default_factory=list)
+    instruments: List[InstrumentRead] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
