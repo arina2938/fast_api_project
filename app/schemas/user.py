@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, EmailStr, Field
 from app.models.models import UserRole
+from typing import List, Optional
 from typing import Literal
 
 class UserCreate(BaseModel):
@@ -27,3 +28,21 @@ class UserRead(UserCreate):
 
     class Config:
         orm_mode = True
+
+
+class PreferenceCreate(BaseModel):
+    instrument_id: Optional[int] = None
+    composer_id: Optional[int] = None
+
+
+class PreferenceResponse(PreferenceCreate):
+    id: int
+    user_id: int
+    class Config:
+        from_attributes = True
+
+
+class RecommendationRequest(BaseModel):
+    limit: int = 10
+    include_upcoming: bool = True
+    include_completed: bool = False
