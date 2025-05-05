@@ -58,5 +58,3 @@ class ConcertUpdateInfo(BaseModel):
     price_type: Optional[str] = None
     price_amount: Optional[int] = None
     location: Optional[str] = None
-    composers: Optional[List[int]] = None
-    instruments: Optional[List[int]] = None

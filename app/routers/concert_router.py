@@ -161,7 +161,7 @@ def read_concert(
 
 
 @router.patch("/{concert_id}",
-              response_model=schemas.ConcertRead,
+              response_model=schemas.ConcertUpdateInfo,
               status_code=status.HTTP_200_OK,
               summary='Изменить информацию о концерте')
 def update_concert(
@@ -193,13 +193,7 @@ def update_concert(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Невозможно установить дату концерта раньше сегодняшней"
             )
-        if new_date < concert.date:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Нельзя перенести концерт на более раннюю дату"
-            )
 
-    # Обновляем поля
     for key, value in data.items():
         setattr(concert, key, value)
 
@@ -319,7 +313,6 @@ def filter_concerts(
         query = query.join(Concert.concert_instruments).join(ConcertInstrument.instrument).filter(
             Instrument.name.in_(instrument_names)
         )
-
     concerts = query.all()
 
     return concerts
