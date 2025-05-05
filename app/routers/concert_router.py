@@ -9,6 +9,8 @@ from app.models.models import (Concert, User, ConcertStatus,
                                Composer, Instrument, ConcertComposer,
                                ConcertInstrument, UserRole)
 from app.schemas import concert as schemas
+from app.schemas.composer import ComposerRead
+from app.schemas.instrument import InstrumentRead
 from ..auth.auth import get_current_user
 
 
@@ -51,7 +53,7 @@ def create_concert(
     )
 
     db.add(new_concert)
-    db.flush()  # чтобы получить new_concert.id без коммита
+    db.flush()
 
     if concert_data.composers:
         for composer_id in concert_data.composers:
@@ -84,22 +86,50 @@ def create_concert(
             summary='Получить концерты с фильтрацией по статусу',
             description="Возвращает список концертов с возможностью фильтрации по статусу")
 def get_concerts(
-        status_of_concert: schemas.ConcertStatus | None = Query(
-            default=None,
-            description="Фильтр по статусу концерта",
-            examples=["upcoming", "completed", "cancelled"]
-        ),
+        status_of_concert: schemas.ConcertStatus | None = Query(default=None),
         skip: int = 0,
         limit: int = 100,
         db: Session = Depends(get_session)
 ):
-    query = select(Concert)
+    query = db.query(Concert).options(
+        joinedload(Concert.concert_composers).joinedload(ConcertComposer.composer),
+        joinedload(Concert.concert_instruments).joinedload(ConcertInstrument.instrument)
+    )
 
     if status_of_concert:
-        query = query.where(Concert.current_status == status_of_concert.value)
+        query = query.filter(Concert.current_status == status_of_concert.value)
+    concerts = query.offset(skip).limit(limit).all()
 
-    concerts = db.execute(query.offset(skip).limit(limit)).scalars().all()
-    return concerts
+    result = []
+    for concert in concerts:
+        concert_dict = {
+            "id": concert.id,
+            "title": concert.title,
+            "date": concert.date,
+            "description": concert.description,
+            "price_type": concert.price_type,
+            "price_amount": concert.price_amount,
+            "location": concert.location,
+            "current_status": concert.current_status,
+            "organization_id": concert.organization_id,
+            "composers": [
+                {
+                    "id": cc.composer.id,
+                    "name": cc.composer.name,
+                    "birth_year": cc.composer.birth_year,
+                    "death_year": cc.composer.death_year
+                } for cc in concert.concert_composers
+            ],
+            "instruments": [
+                {
+                    "id": ci.instrument.id,
+                    "name": ci.instrument.name
+                } for ci in concert.concert_instruments
+            ]
+        }
+        result.append(concert_dict)
+
+    return result
 
 @router.get("/{concert_id}",
             response_model=schemas.ConcertRead,
@@ -109,12 +139,19 @@ def read_concert(
         concert_id: int,
         db: Session = Depends(get_session)
 ):
-    concert = db.get(Concert, concert_id)
+    concert = db.query(Concert).options(
+        joinedload(Concert.concert_composers).joinedload(ConcertComposer.composer),
+        joinedload(Concert.concert_instruments).joinedload(ConcertInstrument.instrument)
+    ).filter(Concert.id == concert_id).first()
+
     if not concert:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Концерт не найден"
         )
+
+    concert.composers = [ComposerRead.from_orm(cc.composer) for cc in concert.concert_composers]
+    concert.instruments = [InstrumentRead.from_orm(ci.instrument) for ci in concert.concert_instruments]
     return concert
 
 
@@ -235,12 +272,6 @@ def delete_concert(
             detail="Вы не являетесь организатором этого концерта"
         )
     db.refresh(concert)
-
-    #if concert.current_status not in [ConcertStatus.CANCELLED, ConcertStatus.COMPLETED]:
-    #    raise HTTPException(
-    #        status_code=status.HTTP_400_BAD_REQUEST,
-    #        detail="Можно удалить только отменённый или завершённый концерт"
-    #    )
     db.query(ConcertComposer).filter_by(concert_id=concert_id).delete()
 
     db.query(ConcertInstrument).filter_by(concert_id=concert_id).delete()
