@@ -3,6 +3,8 @@ from faker import Faker
 from fastapi.testclient import TestClient
 from fastapi import status
 from datetime import datetime, timedelta, timezone
+from typing import List
+
 from app.main import app
 from app.models.models import (
     Concert, ConcertStatus, User, UserRole,
@@ -15,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 
 fake = Faker()
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_concerts.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
