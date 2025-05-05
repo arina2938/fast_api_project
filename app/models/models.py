@@ -139,3 +139,19 @@ class ConcertInstrument(Base):
 
     concert = relationship("Concert", back_populates="concert_instruments")
     instrument = relationship("Instrument", back_populates="concert_instruments")
+
+
+class UserPreference(Base):
+    """Таблица любимых композиторов и инстурментов пользователя"""
+
+    __tablename__ = "user_preferences"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    instrument_id = Column(Integer, ForeignKey("instruments.id"), nullable=True)
+    composer_id = Column(Integer, ForeignKey("composers.id"), nullable=True)
+    #date = Column(DateTime, nullable=False, default=datetime.now())
+
+    user = relationship("User")
+    instrument = relationship("Instrument")
+    composer = relationship("Composer")
