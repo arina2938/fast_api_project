@@ -98,17 +98,13 @@ def get_concerts(
         joinedload(Concert.concert_instruments).joinedload(ConcertInstrument.instrument)
     )
 
-    # Добавляем фильтр по статусу, если он указан
     if status_of_concert:
         query = query.filter(Concert.current_status == status_of_concert.value)
 
-    # Применяем пагинацию и получаем результаты
     concerts = query.offset(skip).limit(limit).all()
 
-    # Преобразуем каждый концерт
     result = []
     for concert in concerts:
-        # Создаем словарь с основными данными концерта
         concert_dict = {
             "id": concert.id,
             "title": concert.title,
@@ -119,7 +115,6 @@ def get_concerts(
             "location": concert.location,
             "current_status": concert.current_status,
             "organization_id": concert.organization_id,
-            # Преобразуем композиторов
             "composers": [
                 {
                     "id": cc.composer.id,
@@ -128,7 +123,6 @@ def get_concerts(
                     "death_year": cc.composer.death_year
                 } for cc in concert.concert_composers
             ],
-            # Преобразуем инструменты
             "instruments": [
                 {
                     "id": ci.instrument.id,
