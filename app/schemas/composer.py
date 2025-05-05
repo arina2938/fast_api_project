@@ -33,4 +33,4 @@ class ComposerRead(ComposerBase):
     id: int
 
     class Config:
-        from_attributes = True  # Позволяет Pydantic работать с ORM-моделями (SQLAlchemy)
+        from_attributes = True
