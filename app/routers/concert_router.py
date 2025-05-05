@@ -9,8 +9,6 @@ from app.models.models import (Concert, User, ConcertStatus,
                                Composer, Instrument, ConcertComposer,
                                ConcertInstrument, UserRole)
 from app.schemas import concert as schemas
-from app.schemas.composer import ComposerRead
-from app.schemas.instrument import InstrumentRead
 from ..auth.auth import get_current_user
 
 
@@ -53,7 +51,7 @@ def create_concert(
     )
 
     db.add(new_concert)
-    db.flush()
+    db.flush()  # чтобы получить new_concert.id без коммита
 
     if concert_data.composers:
         for composer_id in concert_data.composers:
@@ -86,7 +84,11 @@ def create_concert(
             summary='Получить концерты с фильтрацией по статусу',
             description="Возвращает список концертов с возможностью фильтрации по статусу")
 def get_concerts(
-        status_of_concert: schemas.ConcertStatus | None = Query(default=None),
+        status_of_concert: schemas.ConcertStatus | None = Query(
+            default=None,
+            description="Фильтр по статусу концерта",
+            examples=["upcoming", "completed", "cancelled"]
+        ),
         skip: int = 0,
         limit: int = 100,
         db: Session = Depends(get_session)
@@ -96,12 +98,17 @@ def get_concerts(
         joinedload(Concert.concert_instruments).joinedload(ConcertInstrument.instrument)
     )
 
+    # Добавляем фильтр по статусу, если он указан
     if status_of_concert:
         query = query.filter(Concert.current_status == status_of_concert.value)
+
+    # Применяем пагинацию и получаем результаты
     concerts = query.offset(skip).limit(limit).all()
 
+    # Преобразуем каждый концерт
     result = []
     for concert in concerts:
+        # Создаем словарь с основными данными концерта
         concert_dict = {
             "id": concert.id,
             "title": concert.title,
@@ -112,6 +119,7 @@ def get_concerts(
             "location": concert.location,
             "current_status": concert.current_status,
             "organization_id": concert.organization_id,
+            # Преобразуем композиторов
             "composers": [
                 {
                     "id": cc.composer.id,
@@ -120,6 +128,7 @@ def get_concerts(
                     "death_year": cc.composer.death_year
                 } for cc in concert.concert_composers
             ],
+            # Преобразуем инструменты
             "instruments": [
                 {
                     "id": ci.instrument.id,
@@ -150,8 +159,10 @@ def read_concert(
             detail="Концерт не найден"
         )
 
-    concert.composers = [ComposerRead.from_orm(cc.composer) for cc in concert.concert_composers]
-    concert.instruments = [InstrumentRead.from_orm(ci.instrument) for ci in concert.concert_instruments]
+    # Преобразуем данные в нужный формат
+    concert.composers = [schemas.ComposerRead.from_orm(cc.composer) for cc in concert.concert_composers]
+    concert.instruments = [schemas.InstrumentRead.from_orm(ci.instrument) for ci in concert.concert_instruments]
+
     return concert
 
 
@@ -272,6 +283,12 @@ def delete_concert(
             detail="Вы не являетесь организатором этого концерта"
         )
     db.refresh(concert)
+
+    #if concert.current_status not in [ConcertStatus.CANCELLED, ConcertStatus.COMPLETED]:
+    #    raise HTTPException(
+    #        status_code=status.HTTP_400_BAD_REQUEST,
+    #        detail="Можно удалить только отменённый или завершённый концерт"
+    #    )
     db.query(ConcertComposer).filter_by(concert_id=concert_id).delete()
 
     db.query(ConcertInstrument).filter_by(concert_id=concert_id).delete()
