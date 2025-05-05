@@ -65,10 +65,10 @@ def user_login(
             "access_token": access_token,
             "token_type": "bearer"
         }
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Wrong password for user {login_attempt_data.username}"
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail=f"Wrong password for user {login_attempt_data.username}"
         )
 
 
@@ -93,7 +93,8 @@ def create_user(user: schema_user.UserCreate, session: Session = Depends(get_ses
          if user.role not in UserRole.__members__.values():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Поле 'role' может принимать только значения: {[role.value for role in UserRole]}"
+            detail=f"Поле 'role' может принимать только значения:
+             {[role.value for role in UserRole]}"
         )
     """
     existing_user = session.query(User).filter(User.email == user.email).first()
@@ -105,7 +106,8 @@ def create_user(user: schema_user.UserCreate, session: Session = Depends(get_ses
     if user.role not in UserRole.__members__.values():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Поле 'role' может принимать только значения: {[role.value for role in UserRole]}"
+            detail=f"Поле 'role' может принимать только значения:"
+                   f" {[role.value for role in UserRole]}"
         )
 
     # Hash the password before storing it
